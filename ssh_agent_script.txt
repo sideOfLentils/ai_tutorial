@@ -1,0 +1,26 @@
+SSH_ENV="$HOME/.ssh/environment"
+
+function start_agent {
+    echo "Initialising new SSH agent..."
+    /usr/bin/ssh-agent | sed 's/^echo/#echo/' > "${SSH_ENV}"
+    if [ $? -eq 0 ]; then
+        echo "SSH agent started successfully."
+        chmod 600 "${SSH_ENV}"
+        . "${SSH_ENV}" > /dev/null
+        /usr/bin/ssh-add
+        /usr/bin/ssh-add --apple-use-keychain ~/.ssh/school_ed25519
+    else
+        echo "Failed to start SSH agent."
+    fi
+}
+
+# Source SSH settings, if applicable
+if [ -f "${SSH_ENV}" ]; then
+    . "${SSH_ENV}" > /dev/null
+    # Improved check for ssh-agent process
+    if ! ps -p ${SSH_AGENT_PID} > /dev/null; then
+        start_agent
+    fi
+else
+    start_agent
+fi
